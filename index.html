@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1612">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Routine">
+<title>Routine</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --app-bg: #1a1612;
+    --surface: #211e19;
+    --surface2: #2a2520;
+    --border: rgba(212,180,120,0.18);
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --text-primary: #f0e8d8;
+    --text-secondary: #9e8e72;
+    --text-muted: #5c5040;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--app-bg);
+    color: var(--text-primary);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+
+  /* HEADER */
+  .app-header {
+    padding: 4px 20px 14px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .app-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px;
+    color: var(--gold-light);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+
+  .day-badge {
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding-bottom: 2px;
+  }
+
+  /* SCROLL AREA */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 16px 20px;
+  }
+
+  /* DAY NAV */
+  .day-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+    scrollbar-width: none;
+  }
+  .day-nav::-webkit-scrollbar { display: none; }
+
+  .day-tab {
+    flex-shrink: 0;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 0.5px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+    -webkit-appearance: none;
+  }
+
+  .day-tab.active {
+    background: var(--gold);
+    color: #1a1612;
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+
+  .day-tab:active:not(.active) {
+    background: var(--surface2);
+    color: var(--text-primary);
+  }
+
+  /* NOW CARD */
+  .now-card {
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 18px;
+    padding: 20px 22px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .now-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--gold);
+    border-radius: 4px 0 0 4px;
+  }
+
+  .slot-label {
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .slot-label.preview-label { color: var(--text-muted); }
+  .slot-label.preview-label .live-dot { background: var(--text-muted); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .slot-time {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slot-activity {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    color: var(--text-primary);
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--text-muted);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 10s linear;
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  /* NEXT CARDS */
+  .next-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .next-card {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .next-time-block {
+    min-width: 52px;
+    text-align: center;
+  }
+
+  .next-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    display: block;
+    line-height: 1.3;
+  }
+
+  .next-n {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .next-divider {
+    width: 1px;
+    height: 34px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .next-activity {
+    font-size: 14px;
+    color: var(--text-primary);
+    flex: 1;
+    line-height: 1.35;
+  }
+
+  /* DAY OVERVIEW */
+  .day-overview {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+
+  .overview-title {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .timeline-row {
+    display: flex;
+    gap: 2px;
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 7px;
+    position: relative;
+  }
+
+  .timeline-seg {
+    flex: 1;
+    position: relative;
+  }
+
+  .tl-now-marker {
+    position: absolute;
+    top: -1px; bottom: -1px;
+    width: 2px;
+    background: var(--gold-light);
+    border-radius: 1px;
+    z-index: 2;
+    box-shadow: 0 0 4px rgba(232,201,122,0.5);
+  }
+
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  /* FULL SCHEDULE */
+  .full-schedule {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .schedule-header {
+    padding: 12px 16px;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .schedule-row {
+    display: flex;
+    align-items: center;
+    padding: 9px 16px;
+    border-bottom: 0.5px solid rgba(212,180,120,0.07);
+    gap: 14px;
+    transition: background 0.1s;
+  }
+
+  .schedule-row:last-child { border-bottom: none; }
+
+  .schedule-row.active-row {
+    background: rgba(201,168,76,0.08);
+    border-left: 3px solid var(--gold);
+    padding-left: 13px;
+  }
+
+  .sched-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 52px;
+  }
+
+  .sched-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .schedule-row.active-row .sched-dot { background: var(--gold); }
+
+  .sched-activity {
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .schedule-row.active-row .sched-activity {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* ORNAMENT & FOOTER */
+  .ornament {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    padding: 6px 0 14px;
+  }
+
+  /* TOGGLE BUTTON */
+  .toggle-sched-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    margin-bottom: 14px;
+    -webkit-appearance: none;
+    text-transform: uppercase;
+  }
+
+  .toggle-sched-btn:active {
+    background: var(--surface2);
+    color: var(--text-primary);
+  }
+</style>
+</head>
+<body>
+
+<div class="status-bar">
+  <span id="live-time">--:--</span>
+  <span style="letter-spacing:0.06em;font-size:10px">✦ SAVAGE BABY</span>
+  <span id="live-date" style="font-size:11px"></span>
+</div>
+
+<div class="app-header">
+  <div class="app-title">Routine</div>
+  <div class="day-badge" id="today-label">Monday</div>
+</div>
+
+<div class="scroll-area">
+
+  <div class="day-nav" id="day-nav"></div>
+
+  <div class="now-card" id="now-card">
+    <div class="slot-label" id="slot-label"><span class="live-dot" id="live-dot"></span> <span id="slot-label-text">Now</span></div>
+    <div class="slot-time" id="now-time">--:-- – --:--</div>
+    <div class="slot-activity" id="now-activity">Loading...</div>
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="progress-label">—</div>
+    </div>
+  </div>
+
+  <div class="next-cards" id="next-cards"></div>
+
+  <div class="day-overview">
+    <div class="overview-title">Today at a glance</div>
+    <div class="timeline-row" id="timeline-row"></div>
+    <div class="timeline-labels">
+      <span>6am</span><span>9am</span><span>12pm</span><span>3pm</span><span>6pm</span><span>9pm</span><span>12am</span>
+    </div>
+  </div>
+
+  <button class="toggle-sched-btn" id="toggle-btn" onclick="toggleSchedule()">Show Full Day Schedule ▾</button>
+
+  <div class="full-schedule" id="full-schedule" style="display:none">
+    <div class="schedule-header">Full day schedule</div>
+    <div id="schedule-list"></div>
+  </div>
+
+  <div class="ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
+
+</div>
+
+<script>
+const SCHEDULE = {
+  monday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Wake up, shower, get ready"],
+    [8,0,"Breakfast"],[8,30,"Breakfast, brush your teeth"],[9,0,"UU Work — Plan your week"],
+    [9,30,"UU Work — Plan your week"],[10,0,"UU Work — CoSTAR / SU"],[10,30,"UU Work — CoSTAR / SU"],
+    [11,0,"UU Work — CoSTAR / SU"],[11,30,"UU Work — CoSTAR / SU"],[12,0,"UU Work — CoSTAR / SU"],
+    [12,30,"Walk"],[13,0,"Walk"],[13,30,"Lunch"],[14,0,"Film Work — Plan your week"],
+    [14,30,"Film Work — Plan your week"],[15,0,"Film Work"],[15,30,"Film Work"],
+    [16,0,"Film Work"],[16,30,"Film Work"],[17,0,"Film Work"],[17,30,"Film Work"],
+    [18,0,"Walk"],[18,30,"Walk"],[19,0,"Make the dinner"],[19,30,"Make the dinner"],
+    [20,0,"Dinner, brush your teeth"],[20,30,"Relax"],[21,0,"Relax"],[21,30,"Relax"],
+    [22,0,"Relax"],[22,30,"Relax"],[23,0,"Relax"],[23,30,"Wind down for bed"],
+    [0,0,"Bed"],[0,30,"Sleep"],[1,0,"Sleep"],[1,30,"Sleep"],[2,0,"Sleep"],
+    [2,30,"Sleep"],[3,0,"Sleep"],[3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ],
+  tuesday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Wake up, shower, get ready"],
+    [8,0,"Breakfast, brush your teeth"],[8,30,"Drive to work"],[9,0,"UU Work — Meetings / Emails"],
+    [9,30,"UU Work — Meetings / Emails"],[10,0,"UU Work — Meetings / Emails"],[10,30,"UU Work — Meetings / Emails"],
+    [11,0,"UU Work — Meetings / Emails"],[11,30,"UU Work — Meetings / Emails"],[12,0,"Lunch, walk"],
+    [12,30,"Lunch, walk"],[13,0,"Lunch, walk"],[13,30,"UU Work — Meetings / Emails"],
+    [14,0,"UU Work — Meetings / Emails"],[14,30,"UU Work — Meetings / Emails"],[15,0,"UU Work — Meetings / Emails"],
+    [15,30,"UU Work — Meetings / Emails"],[16,0,"UU Work — Meetings / Emails"],[16,30,"UU Work — Meetings / Emails"],
+    [17,0,"Drive home"],[17,30,"Drive home"],[18,0,"Make the dinner"],[18,30,"Make the dinner"],
+    [19,0,"Dinner, brush your teeth"],[19,30,"Drive to class"],[20,0,"Acting class"],[20,30,"Acting class"],
+    [21,0,"Acting class"],[21,30,"Acting class"],[22,0,"Drive home"],[22,30,"Relax"],
+    [23,0,"Relax"],[23,30,"Wind down for bed"],[0,0,"Bed"],[0,30,"Sleep"],
+    [1,0,"Sleep"],[1,30,"Sleep"],[2,0,"Sleep"],[2,30,"Sleep"],[3,0,"Sleep"],
+    [3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ],
+  wednesday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Wake up, shower, get ready"],
+    [8,0,"Breakfast"],[8,30,"Breakfast, brush your teeth"],[9,0,"UU Work — CDHT / City Deals"],
+    [9,30,"UU Work — CDHT / City Deals"],[10,0,"UU Work — CDHT / City Deals"],[10,30,"UU Work — CDHT / City Deals"],
+    [11,0,"UU Work — CDHT / City Deals"],[11,30,"UU Work — CDHT / City Deals"],[12,0,"UU Work — CDHT / City Deals"],
+    [12,30,"Walk"],[13,0,"Walk"],[13,30,"Lunch"],[14,0,"Film Work"],[14,30,"Film Work"],
+    [15,0,"Film Work"],[15,30,"Film Work"],[16,0,"Film Work"],[16,30,"Film Work"],
+    [17,0,"Film Work"],[17,30,"Film Work"],[18,0,"Walk"],[18,30,"Walk"],
+    [19,0,"Make the dinner"],[19,30,"Make the dinner"],[20,0,"Dinner, brush your teeth"],
+    [20,30,"Relax"],[21,0,"Relax"],[21,30,"Relax"],[22,0,"Relax"],[22,30,"Relax"],
+    [23,0,"Relax"],[23,30,"Wind down for bed"],[0,0,"Bed"],[0,30,"Sleep"],
+    [1,0,"Sleep"],[1,30,"Sleep"],[2,0,"Sleep"],[2,30,"Sleep"],[3,0,"Sleep"],
+    [3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ],
+  thursday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Wake up, shower, get ready"],
+    [8,0,"Breakfast, brush your teeth"],[8,30,"Drive to work"],[9,0,"UU Work — Admin / Plans / Reports"],
+    [9,30,"UU Work — Admin / Plans / Reports"],[10,0,"UU Work — Admin / Plans / Reports"],[10,30,"UU Work — Admin / Plans / Reports"],
+    [11,0,"UU Work — Admin / Plans / Reports"],[11,30,"UU Work — Admin / Plans / Reports"],[12,0,"Lunch, walk"],
+    [12,30,"Lunch, walk"],[13,0,"Lunch, walk"],[13,30,"Film Work"],
+    [14,0,"Film Work"],[14,30,"Film Work"],[15,0,"Film Work"],
+    [15,30,"Film Work"],[16,0,"Film Work"],[16,30,"Film Work"],
+    [17,0,"Drive home"],[17,30,"Drive home"],[18,0,"Walk"],
+    [18,30,"Walk"],[19,0,"Make the dinner"],[19,30,"Make the dinner"],[20,0,"Dinner, brush your teeth"],
+    [20,30,"Relax"],[21,0,"Relax"],[21,30,"Relax"],[22,0,"Relax"],[22,30,"Relax"],
+    [23,0,"Relax"],[23,30,"Wind down for bed"],[0,0,"Bed"],[0,30,"Sleep"],
+    [1,0,"Sleep"],[1,30,"Sleep"],[2,0,"Sleep"],[2,30,"Sleep"],[3,0,"Sleep"],
+    [3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ],
+  friday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Wake up, shower, get ready"],
+    [8,0,"Breakfast"],[8,30,"Breakfast, brush your teeth"],[9,0,"UU Work — USA / FSNI"],
+    [9,30,"UU Work — USA / FSNI"],[10,0,"UU Work — USA / FSNI"],[10,30,"UU Work — USA / FSNI"],
+    [11,0,"UU Work — USA / FSNI"],[11,30,"UU Work — Review week"],[12,0,"UU Work — Review week"],
+    [12,30,"Walk"],[13,0,"Walk"],[13,30,"Lunch"],[14,0,"Film Work"],[14,30,"Film Work"],
+    [15,0,"Film Work — Review week"],[15,30,"Film Work — Review week"],[16,0,"Walk"],
+    [16,30,"Walk"],[17,0,"Walk"],[17,30,"Make the dinner"],[18,0,"Make the dinner"],
+    [18,30,"Dinner, brush your teeth"],[19,0,"Head out or relax"],[19,30,"Head out or relax"],
+    [20,0,"Head out or relax"],[20,30,"Head out or relax"],[21,0,"Head out or relax"],
+    [21,30,"Head out or relax"],[22,0,"Head out or relax"],[22,30,"Head out or have a smoke"],
+    [23,0,"Head out or have a smoke"],[23,30,"Go home or have a smoke"],[0,0,"Have a smoke, relax"],
+    [0,30,"Relax"],[1,0,"Relax"],[1,30,"Wind down for bed"],[2,0,"Bed"],
+    [2,30,"Sleep"],[3,0,"Sleep"],[3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ],
+  saturday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Sleep"],[8,0,"Sleep"],[8,30,"Sleep"],
+    [9,0,"Wake up"],[9,30,"Breakfast, brush your teeth"],[10,0,"Clean the house"],
+    [10,30,"Clean the house"],[11,0,"Clean the house"],[11,30,"Clean the house"],
+    [12,0,"Shower, get ready"],[12,30,"Walk, head into town"],[13,0,"Walk, head into town"],
+    [13,30,"Walk, head into town"],[14,0,"Lunch, shopping"],[14,30,"Lunch, shopping"],
+    [15,0,"Lunch, shopping"],[15,30,"Film Work"],[16,0,"Film Work"],[16,30,"Film Work"],
+    [17,0,"Film Work"],[17,30,"Film Work"],[18,0,"Head home"],[18,30,"Head home"],
+    [19,0,"Make the dinner"],[19,30,"Make the dinner"],[20,0,"Dinner, brush your teeth"],
+    [20,30,"Head out or relax"],[21,0,"Head out or relax"],[21,30,"Head out or relax"],
+    [22,0,"Head out or relax"],[22,30,"Head out or have a smoke"],[23,0,"Head out or have a smoke"],
+    [23,30,"Go home or have a smoke"],[0,0,"Have a smoke, relax"],[0,30,"Relax"],
+    [1,0,"Relax"],[1,30,"Wind down for bed"],[2,0,"Bed"],[2,30,"Sleep"],
+    [3,0,"Sleep"],[3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ],
+  sunday: [
+    [6,0,"Sleep"],[6,30,"Sleep"],[7,0,"Sleep"],[7,30,"Sleep"],[8,0,"Sleep"],[8,30,"Sleep"],
+    [9,0,"Wake up"],[9,30,"Breakfast, brush your teeth"],[10,0,"House DIY or gardening"],
+    [10,30,"House DIY or gardening"],[11,0,"House DIY or gardening"],[11,30,"House DIY or gardening"],
+    [12,0,"House DIY or gardening"],[12,30,"House DIY or gardening"],[13,0,"Shower, get ready"],
+    [13,30,"Shopping list"],[14,0,"Shopping"],[14,30,"Shopping"],[15,0,"Family"],
+    [15,30,"Family"],[16,0,"Family"],[16,30,"Family"],[17,0,"Family"],[17,30,"Family"],
+    [18,0,"Family"],[18,30,"Family"],[19,0,"Family"],[19,30,"Family"],[20,0,"Head home"],
+    [20,30,"Relax"],[21,0,"Relax"],[21,30,"Relax"],[22,0,"Relax"],[22,30,"Relax"],
+    [23,0,"Relax"],[23,30,"Wind down for bed"],[0,0,"Bed"],[0,30,"Sleep"],
+    [1,0,"Sleep"],[1,30,"Sleep"],[2,0,"Sleep"],[2,30,"Sleep"],[3,0,"Sleep"],
+    [3,30,"Sleep"],[4,0,"Sleep"],[4,30,"Sleep"],[5,0,"Sleep"],[5,30,"Sleep"]
+  ]
+};
+
+const DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const DAY_LABEL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+let selectedDay = null;
+let scheduleVisible = false;
+
+function getSlotColor(activity) {
+  const a = activity.toLowerCase();
+  if (a.includes('sleep') || a.includes('bed') || a.includes('wind down')) return '#1e1b16';
+  if (a.includes('uu work')) return '#162030';
+  if (a.includes('film work')) return '#1e1530';
+  if (a.includes('walk') || a.includes('spin')) return '#121f18';
+  if (a.includes('dinner') || a.includes('lunch') || a.includes('breakfast') || a.includes('make the dinner')) return '#28180d';
+  if (a.includes('acting class') || a.includes('class')) return '#221030';
+  if (a.includes('relax') || a.includes('head out')) return '#1a1525';
+  return '#211e19';
+}
+
+function fmtHour(h, m) {
+  const ampm = h < 12 ? 'am' : 'pm';
+  const hh = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  const mm = m === 0 ? '' : ':' + String(m).padStart(2, '0');
+  return hh + mm + ampm;
+}
+
+function getSlotIndex(daySchedule, h, m) {
+  const totalMins = h * 60 + m;
+  for (let i = 0; i < daySchedule.length; i++) {
+    const [sh, sm] = daySchedule[i];
+    const slotMins = sh * 60 + sm;
+    if (totalMins >= slotMins && totalMins < slotMins + 30) return i;
+  }
+  return daySchedule.length - 1;
+}
+
+function toggleSchedule() {
+  scheduleVisible = !scheduleVisible;
+  document.getElementById('full-schedule').style.display = scheduleVisible ? 'block' : 'none';
+  document.getElementById('toggle-btn').textContent = scheduleVisible
+    ? 'Hide Full Day Schedule ▴'
+    : 'Show Full Day Schedule ▾';
+  if (scheduleVisible) {
+    setTimeout(() => {
+      const activeRow = document.querySelector('.active-row');
+      if (activeRow) activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+}
+
+function render() {
+  const now = new Date();
+  const realDayIdx = now.getDay();
+  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+
+  const timeStr = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  document.getElementById('live-time').textContent = timeStr;
+  document.getElementById('live-date').textContent = dateStr;
+
+  const dayKey = selectedDay || DAYS[realDayIdx];
+  const isToday = !selectedDay || selectedDay === DAYS[realDayIdx];
+
+  document.getElementById('today-label').textContent = DAY_LABEL[DAYS.indexOf(dayKey)];
+
+  const sched = SCHEDULE[dayKey];
+  const lookupH = isToday ? h : 10;
+  const lookupM = isToday ? m : 0;
+  const idx = getSlotIndex(sched, lookupH, lookupM);
+  const [sh, sm] = sched[idx];
+  const endH = sm === 30 ? sh + 1 : sh;
+  const endM = sm === 30 ? 0 : 30;
+
+  document.getElementById('now-time').textContent =
+    fmtHour(sh, sm) + ' – ' + fmtHour(endH >= 24 ? 0 : endH, endM);
+  document.getElementById('now-activity').textContent = sched[idx][2];
+
+  const slotLabelEl = document.getElementById('slot-label');
+  const slotLabelText = document.getElementById('slot-label-text');
+  const liveDot = document.getElementById('live-dot');
+  if (isToday) {
+    slotLabelEl.className = 'slot-label';
+    slotLabelText.textContent = 'Now';
+    liveDot.style.animation = 'pulse 2s infinite';
+  } else {
+    slotLabelEl.className = 'slot-label preview-label';
+    slotLabelText.textContent = 'Preview';
+    liveDot.style.animation = 'none';
+  }
+
+  const slotStart = sh * 60 + sm;
+  const slotEnd = slotStart + 30;
+  const nowMins = lookupH * 60 + lookupM + (isToday ? s / 60 : 0);
+  const pct = Math.min(100, Math.max(0, ((nowMins - slotStart) / 30) * 100));
+  const minsLeft = Math.max(0, Math.round(slotEnd - nowMins));
+  document.getElementById('progress-fill').style.width = pct.toFixed(1) + '%';
+  document.getElementById('progress-label').textContent = isToday
+    ? (minsLeft === 0 ? 'ending now' : minsLeft + ' min left')
+    : 'preview mode';
+
+  // Next 2 slots
+  const nc = document.getElementById('next-cards');
+  nc.innerHTML = '';
+  for (let i = 1; i <= 2; i++) {
+    const ni = (idx + i) % sched.length;
+    const [nh, nm] = sched[ni];
+    const neh = nm === 30 ? nh + 1 : nh;
+    const nem = nm === 30 ? 0 : 30;
+    const card = document.createElement('div');
+    card.className = 'next-card';
+    card.innerHTML = `
+      <div class="next-time-block">
+        <span class="next-time">${fmtHour(nh, nm)}<br>${fmtHour(neh >= 24 ? 0 : neh, nem)}</span>
+        <span class="next-n">${i === 1 ? 'up next' : 'then'}</span>
+      </div>
+      <div class="next-divider"></div>
+      <div class="next-activity">${sched[ni][2]}</div>
+    `;
+    nc.appendChild(card);
+  }
+
+  // Timeline
+  const tlRow = document.getElementById('timeline-row');
+  tlRow.innerHTML = '';
+  const filtered = sched.filter(slot => {
+    const mins = slot[0] * 60 + slot[1];
+    const adj = mins < 6 * 60 ? mins + 24 * 60 : mins;
+    return adj >= 6 * 60 && adj < 24 * 60;
+  });
+  filtered.forEach((slot, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'timeline-seg';
+    seg.style.background = getSlotColor(slot[2]);
+    seg.title = slot[2];
+    if (isToday) {
+      const slotMins = slot[0] * 60 + slot[1];
+      const adjSlot = slotMins < 6 * 60 ? slotMins + 24 * 60 : slotMins;
+      const adjNow = nowMins < 6 * 60 ? nowMins + 24 * 60 : nowMins;
+      if (adjNow >= adjSlot && adjNow < adjSlot + 30) {
+        const marker = document.createElement('div');
+        marker.className = 'tl-now-marker';
+        marker.style.left = pct.toFixed(1) + '%';
+        seg.appendChild(marker);
+      }
+    }
+    tlRow.appendChild(seg);
+  });
+
+  // Full schedule list
+  if (scheduleVisible) {
+    const sl = document.getElementById('schedule-list');
+    sl.innerHTML = '';
+    const wakeSlots = sched.filter(slot => {
+      const mins = slot[0] * 60 + slot[1];
+      const adj = mins < 6 * 60 ? mins + 24 * 60 : mins;
+      return adj >= 6 * 60 && adj < 30 * 60;
+    });
+    wakeSlots.forEach((slot, i) => {
+      const globalIdx = sched.indexOf(slot);
+      const row = document.createElement('div');
+      row.className = 'schedule-row' + (globalIdx === idx && isToday ? ' active-row' : '');
+      const [rh, rm] = slot;
+      row.innerHTML = `
+        <span class="sched-time">${fmtHour(rh, rm)}</span>
+        <span class="sched-dot"></span>
+        <span class="sched-activity">${slot[2]}</span>
+      `;
+      sl.appendChild(row);
+    });
+  }
+
+  // Day nav
+  const nav = document.getElementById('day-nav');
+  nav.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    const btn = document.createElement('button');
+    const isActive = selectedDay === d || (!selectedDay && d === DAYS[realDayIdx]);
+    btn.className = 'day-tab' + (isActive ? ' active' : '');
+    btn.textContent = DAY_SHORT[i];
+    btn.onclick = () => { selectedDay = d; render(); };
+    nav.appendChild(btn);
+  });
+}
+
+render();
+setInterval(render, 10000);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
