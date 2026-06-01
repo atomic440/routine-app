@@ -2,7 +2,7 @@
   "name": "Routine — Savage Baby",
   "short_name": "Routine",
   "description": "Your half-hourly schedule at a glance",
-  "start_url": "/",
+  "start_url": "/routine-app/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a1612",
